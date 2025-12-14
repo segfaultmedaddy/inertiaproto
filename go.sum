@@ -35,8 +35,6 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 go.inout.gg/foundations v0.0.0-20251108094430-2c59a9842cd4 h1:yV4jvQsvlz/qX0Ctaoju+GUA4FBPFmkWnX3u0sIPzps=
 go.inout.gg/foundations v0.0.0-20251108094430-2c59a9842cd4/go.mod h1:oxhkYdah1erN/pJr0VtCArTmR/X7frnJWy3i+iyhVwA=
-go.segfaultmedaddy.com/inertia v0.0.0-20251114223819-8fde7984882c h1:y7/H2xjBYPz6bNxvRXJMgB5ZsoGKAXR5gI14Dy41ZUI=
-go.segfaultmedaddy.com/inertia v0.0.0-20251114223819-8fde7984882c/go.mod h1:CjEwi/bqEE31A9R3WC0oj0zcYobQ96IQmvocZPSubZQ=
 go.segfaultmedaddy.com/inertia v0.0.0-20251116203103-363576062b1e h1:ug3ajS2PNVHnqPe/ixhzp0MzXbnmaYmrgKjVHTXz4WE=
 go.segfaultmedaddy.com/inertia v0.0.0-20251116203103-363576062b1e/go.mod h1:CjEwi/bqEE31A9R3WC0oj0zcYobQ96IQmvocZPSubZQ=
 go.uber.org/mock v0.6.0 h1:hyF9dfmbgIX5EfOdasqLsWD6xqpNZlXblLB/Dbnwv3Y=

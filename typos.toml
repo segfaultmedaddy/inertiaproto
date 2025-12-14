@@ -1,0 +1,4 @@
+[default]
+locale = "en"
+check-file = true
+check-filename = true

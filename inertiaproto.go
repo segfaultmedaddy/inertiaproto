@@ -6,6 +6,7 @@ import (
 
 	"buf.build/go/protovalidate"
 	"github.com/go-json-experiment/json"
+	"go.inout.gg/foundations/http/httphandler"
 	"go.inout.gg/foundations/http/httpmiddleware"
 	"go.inout.gg/foundations/must"
 	"go.segfaultmedaddy.com/inertia"
@@ -15,33 +16,39 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+var DefaultErrorHandler = inertiaframe.DefaultErrorHandler //nolint:gochecknoglobals
+
+// Endpoint is a inertiaframe.Endpoint that returns a protobuf message as a response.
 type Endpoint[M proto.Message] = inertiaframe.Endpoint[M]
 
-const RootTemplate = `<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    {{.InertiaHead}}
-  </head>
-  <body>
-    {{.InertiaBody}}
-    {{template "viteClient"}}
-    {{template "viteReactRefresh"}}
-    {{viteResource "src/main.tsx"}}
-  </body>
-</html>
-`
-
 type Config struct {
-	BundleVersion string
-	ViteConfig    *vite.Config
 	SSRClient     inertia.SSRClient
+	ErrorHandler  httphandler.ErrorHandler
+	ViteConfig    *vite.Config
+	BundleVersion string
+}
+
+// Option configures the middleware.
+type Option func(*Config)
+
+// WithViteConfig configures the middleware with a vite configuration.
+func WithViteConfig(cfg *vite.Config) Option {
+	return func(c *Config) { c.ViteConfig = cfg }
+}
+
+// WithSSRClient configures the middleware with an SSR client.
+func WithSSRClient(client inertia.SSRClient) Option {
+	return func(c *Config) { c.SSRClient = client }
+}
+
+// WithBundleVersion configures the inertia bundle version.
+func WithBundleVersion(v string) Option {
+	return func(c *Config) { c.BundleVersion = v }
 }
 
 // NewMiddleware creates a new middleware that handles inertia requests
 // using protobuf messages.
-func NewMiddleware(opts ...func(*Config)) httpmiddleware.MiddlewareFunc {
+func NewMiddleware(template string, opts ...Option) httpmiddleware.MiddlewareFunc {
 	var config Config
 	for _, opt := range opts {
 		opt(&config)
@@ -49,12 +56,15 @@ func NewMiddleware(opts ...func(*Config)) httpmiddleware.MiddlewareFunc {
 
 	return inertia.NewMiddleware(inertia.New(
 		must.Must(vite.NewTemplate(
-			RootTemplate,
+			template,
 			config.ViteConfig,
 		)),
 		&inertia.Config{
-			RootViewID:  inertia.DefaultRootViewID,
+			RootViewID:    inertia.DefaultRootViewID,
+			RootViewAttrs: nil,
+
 			Concurrency: inertia.DefaultConcurrency,
+			Version:     config.BundleVersion,
 			SSRClient:   config.SSRClient,
 			JSONMarshalOptions: []json.Options{
 				json.WithMarshalers(json.MarshalFunc(protojson.Marshal)),
@@ -64,7 +74,13 @@ func NewMiddleware(opts ...func(*Config)) httpmiddleware.MiddlewareFunc {
 }
 
 // Mount mounts a new inertia endpoint that uses protobuf messages for
-// communication with client.
+// communication with a client.
+//
+// Incoming requests are validated with protovalidate and if the validation fails,
+// the error is returned to the client as inertia validation error.
+//
+// The incoming and outgoing messages are automatically marshaled and unmarshaled
+// from/to JSON using protojson.
 func Mount[M proto.Message](mux inertiaframe.Mux, endpoint Endpoint[M]) {
 	inertiaframe.Mount(mux, endpoint, &inertiaframe.MountOpts[M]{
 		Validator: inertiaframe.ValidatorFunc[M](func(data M) error {
@@ -79,9 +95,11 @@ func Mount[M proto.Message](mux inertiaframe.Mux, endpoint Endpoint[M]) {
 
 			return nil
 		}),
-		JSONUnmarshalOptions: []json.Options{json.WithUnmarshalers(
-			json.UnmarshalFunc(protojson.Unmarshal),
-		)},
+		FormDecoder:  inertiaframe.DefaultFormDecoder,
+		ErrorHandler: DefaultErrorHandler,
+		JSONUnmarshalOptions: []json.Options{
+			json.WithUnmarshalers(json.UnmarshalFunc(protojson.Unmarshal)),
+		},
 	})
 }
 
